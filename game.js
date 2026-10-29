@@ -55,17 +55,17 @@
     const c = document.createElement("div");
     c.className = "pod healthy";
     c.dataset.i = i;
-    c.innerHTML = `<span class="nm">pod-${String(i + 1).padStart(2, "0")}</span><span class="st">Healthy</span>`;
+    c.innerHTML = `<span class="ico">🟢</span><span class="nm">pod-${String(i + 1).padStart(2, "0")}</span>`;
     grid.appendChild(c);
     cells.push(c);
   }
 
-  const LABEL = { healthy: "Healthy", warning: "Warning", critical: "Critical" };
+  const ICON = { healthy: "🟢", warning: "⚠️", critical: "🔥" };
   function setState(i, state) {
     pods[i].state = state;
     pods[i].since = t;
     cells[i].className = "pod " + state;
-    cells[i].lastChild.textContent = LABEL[state];
+    cells[i].firstChild.textContent = ICON[state];
   }
   const reds = () => pods.filter(p => p.state === "critical").length;
   const idxOf = state => pods.map((p, i) => (p.state === state ? i : -1)).filter(i => i >= 0);
@@ -109,21 +109,13 @@
   function log(msg, cls = "") {
     const d = document.createElement("div");
     if (cls) d.className = cls;
-    const ts = document.createElement("span"); ts.className = "t";
-    ts.textContent = Math.round((GAME_MS - t) / 1000) + "s";
-    const m = document.createElement("span"); m.textContent = msg;
-    d.append(ts, m);
+    d.textContent = `[${((GAME_MS - t) / 1000).toFixed(0).padStart(2, "0")}s] ${msg}`;
     $("#log").prepend(d);
     while ($("#log").children.length > 14) $("#log").lastChild.remove();
   }
   const multiplier = () => (t < comboUntil ? 2 : 1);
   function renderHUD() {
     $("#timer").textContent = Math.max(0, (GAME_MS - t) / 1000).toFixed(1);
-    const cnt = { healthy: 0, warning: 0, critical: 0 };
-    pods.forEach(p => cnt[p.state]++);
-    $("#cntHealthy").textContent = cnt.healthy;
-    $("#cntWarning").textContent = cnt.warning;
-    $("#cntCritical").textContent = cnt.critical;
     $("#score").textContent = score.toLocaleString();
     const h = Math.max(0, health);
     $("#healthText").textContent = Math.round(h) + "%";
@@ -132,9 +124,9 @@
     f.className = h < 30 ? "low" : h < 60 ? "mid" : "";
     const c = $("#combo");
     if (multiplier() === 2) {
-      c.textContent = "2x for " + ((comboUntil - t) / 1000).toFixed(1) + "s";
+      c.textContent = "x2 " + ((comboUntil - t) / 1000).toFixed(1) + "s";
       c.className = "on";
-    } else { c.textContent = "1x"; c.className = "dim"; }
+    } else { c.textContent = "x1"; c.className = "dim"; }
   }
   function pop(i, text, big) {
     const r = cells[i].getBoundingClientRect();
@@ -167,7 +159,7 @@
     resolveTimes = resolveTimes.filter(x => t - x <= COMBO_WINDOW);
     if (resolveTimes.length >= COMBO_NEEDED && t >= comboUntil) {
       comboUntil = t + COMBO_DURATION;
-      log("Combo: 2x points for 5 seconds", "good");
+      log("COMBO! 2x score for 5s", "good");
       beep(1500, 0.2, "sawtooth", 0.07);
     }
     return true;
@@ -286,12 +278,12 @@
     setTimeout(() => document.body.classList.remove("alarm"), 3000);
   }
   function trafficSpike() {
-    log("Traffic spike: 6 pods overloaded", "ev");
+    log("TRAFFIC SPIKE: 6 pods overloaded", "ev");
     shuffle(idxOf("healthy")).slice(0, 6).forEach(i => setState(i, "warning"));
     beep(500, 0.3, "sawtooth", 0.08);
   }
   function chaosMonkey() {
-    log("Chaos event: 8 pods crashed", "ev");
+    log("CHAOS MONKEY: 8 pods crashed!", "ev");
     const pool = shuffle(pods.map((_, i) => i).filter(i => pods[i].state !== "critical"));
     pool.slice(0, 8).forEach(i => setState(i, "critical"));
     screenShake(); siren(3);
@@ -324,7 +316,7 @@
     // per-second scoring
     if (t % 1000 === 0) {
       if (health > 80) score += 50;
-      if (health < 30) { score = Math.max(0, score - 100); log("Health below 30%: -100", "ev"); }
+      if (health < 30) { score = Math.max(0, score - 100); log("Downtime penalty -100", "ev"); }
     }
 
     renderHUD();
@@ -347,7 +339,7 @@
     $("#startOverlay").classList.add("hidden");
     $("#endOverlay").classList.add("hidden");
     running = true;
-    log("Drill started");
+    log("Incident response started. Good luck, SRE.");
     renderHUD();
     loop = setInterval(tick, TICK);
   }
@@ -360,15 +352,15 @@
     const entry = { name, score, survived, ts: Date.now() };
     const rank = saveScore(entry);
     const title = $("#endTitle");
-    title.textContent = survived ? "Cluster survived" : "Cluster went down";
+    title.textContent = survived ? "SYSTEM SURVIVED" : "INFRASTRUCTURE COLLAPSE";
     title.className = survived ? "" : "bad";
-    $("#endSub").textContent = survived ? `${name} kept the cluster up for the full 60 seconds.` : `${name} lost the cluster at ${(t / 1000).toFixed(1)} seconds.`;
+    $("#endSub").textContent = survived ? `Nice work, ${name}. Cluster stayed up for 60s.` : `${name}, the cluster went down at ${(t / 1000).toFixed(1)}s.`;
     $("#endScore").textContent = score.toLocaleString();
-    $("#endRank").textContent = DB ? "Saving your score..." : `Rank #${rank} on the leaderboard`;
+    $("#endRank").textContent = DB ? "Saving score online..." : `Leaderboard rank: #${rank}`;
     if (DB) {
       saveRemote(entry)
-        .then(r => { $("#endRank").textContent = `Rank #${r} on the leaderboard`; })
-        .catch(() => { $("#endRank").textContent = `Saved on this device only (rank #${rank}). The online save failed, so check the connection.`; });
+        .then(r => { $("#endRank").textContent = `Leaderboard rank: #${r}`; })
+        .catch(() => { $("#endRank").textContent = `Saved locally (#${rank}). Online save failed, check connection.`; });
     }
     $("#endOverlay").classList.remove("hidden");
     beep(survived ? 1000 : 120, 0.5, "triangle", 0.1);
@@ -402,14 +394,9 @@
   }
 
   // ---------- Wire up ----------
-  $("#nameInput").value = "";   // always start blank: a new player each time
+  $("#nameInput").value = localStorage.getItem("sniperLastName") || "";
   $("#startBtn").addEventListener("click", start);
-  $("#againBtn").addEventListener("click", () => {
-    $("#endOverlay").classList.add("hidden");
-    $("#nameInput").value = "";                       // clear name for the next player
-    $("#startOverlay").classList.remove("hidden");
-    $("#nameInput").focus();
-  });
+  $("#againBtn").addEventListener("click", () => { $("#endOverlay").classList.add("hidden"); $("#startOverlay").classList.remove("hidden"); });
   $("#nameInput").addEventListener("keydown", e => { if (e.key === "Enter") start(); });
   pods = Array.from({ length: SIZE }, () => ({ state: "healthy", since: 0 }));
   renderHUD();
