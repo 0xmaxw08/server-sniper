@@ -6,7 +6,7 @@
   const GAME_MS = 60000;
   const TICK = 100;
   const WARN_TO_RED_MS = 3000;
-  const DRAIN_PER_RED_PER_TICK = 0.5;   // 5% per second per red node (100ms ticks)
+  const DRAIN_PER_RED_PER_TICK = 0.25;  // 2.5% per second per red node (100ms ticks)
   const REGEN_PER_TICK = 0.1;           // 1%/s slow recovery when no reds (tweak or set 0)
   const HOLD_MS = 750;                  // red hard-reboot hold time
   const GREEN_PENALTY = 100;            // points lost for clicking / pressing S on a healthy pod
@@ -55,17 +55,17 @@
     const c = document.createElement("div");
     c.className = "pod healthy";
     c.dataset.i = i;
-    c.innerHTML = `<span class="ico">🟢</span><span class="nm">pod-${String(i + 1).padStart(2, "0")}</span>`;
+    c.innerHTML = `<span class="nm">pod-${String(i + 1).padStart(2, "0")}</span><span class="st">Healthy</span>`;
     grid.appendChild(c);
     cells.push(c);
   }
 
-  const ICON = { healthy: "🟢", warning: "⚠️", critical: "🔥" };
+  const LABEL = { healthy: "Healthy", warning: "Warning", critical: "Critical" };
   function setState(i, state) {
     pods[i].state = state;
     pods[i].since = t;
     cells[i].className = "pod " + state;
-    cells[i].firstChild.textContent = ICON[state];
+    cells[i].lastChild.textContent = LABEL[state];
   }
   const reds = () => pods.filter(p => p.state === "critical").length;
   const idxOf = state => pods.map((p, i) => (p.state === state ? i : -1)).filter(i => i >= 0);
@@ -109,13 +109,21 @@
   function log(msg, cls = "") {
     const d = document.createElement("div");
     if (cls) d.className = cls;
-    d.textContent = `[${((GAME_MS - t) / 1000).toFixed(0).padStart(2, "0")}s] ${msg}`;
+    const ts = document.createElement("span"); ts.className = "t";
+    ts.textContent = Math.round((GAME_MS - t) / 1000) + "s";
+    const m = document.createElement("span"); m.textContent = msg;
+    d.append(ts, m);
     $("#log").prepend(d);
     while ($("#log").children.length > 14) $("#log").lastChild.remove();
   }
   const multiplier = () => (t < comboUntil ? 2 : 1);
   function renderHUD() {
     $("#timer").textContent = Math.max(0, (GAME_MS - t) / 1000).toFixed(1);
+    const cnt = { healthy: 0, warning: 0, critical: 0 };
+    pods.forEach(p => cnt[p.state]++);
+    $("#cntHealthy").textContent = cnt.healthy;
+    $("#cntWarning").textContent = cnt.warning;
+    $("#cntCritical").textContent = cnt.critical;
     $("#score").textContent = score.toLocaleString();
     const h = Math.max(0, health);
     $("#healthText").textContent = Math.round(h) + "%";
@@ -124,9 +132,9 @@
     f.className = h < 30 ? "low" : h < 60 ? "mid" : "";
     const c = $("#combo");
     if (multiplier() === 2) {
-      c.textContent = "x2 " + ((comboUntil - t) / 1000).toFixed(1) + "s";
+      c.textContent = "2x for " + ((comboUntil - t) / 1000).toFixed(1) + "s";
       c.className = "on";
-    } else { c.textContent = "x1"; c.className = "dim"; }
+    } else { c.textContent = "1x"; c.className = "dim"; }
   }
   function pop(i, text, big) {
     const r = cells[i].getBoundingClientRect();
@@ -159,7 +167,7 @@
     resolveTimes = resolveTimes.filter(x => t - x <= COMBO_WINDOW);
     if (resolveTimes.length >= COMBO_NEEDED && t >= comboUntil) {
       comboUntil = t + COMBO_DURATION;
-      log("COMBO! 2x score for 5s", "good");
+      log("Combo: 2x points for 5 seconds", "good");
       beep(1500, 0.2, "sawtooth", 0.07);
     }
     return true;
@@ -278,12 +286,12 @@
     setTimeout(() => document.body.classList.remove("alarm"), 3000);
   }
   function trafficSpike() {
-    log("TRAFFIC SPIKE: 6 pods overloaded", "ev");
+    log("Traffic spike: 6 pods overloaded", "ev");
     shuffle(idxOf("healthy")).slice(0, 6).forEach(i => setState(i, "warning"));
     beep(500, 0.3, "sawtooth", 0.08);
   }
   function chaosMonkey() {
-    log("CHAOS MONKEY: 8 pods crashed!", "ev");
+    log("Chaos event: 8 pods crashed", "ev");
     const pool = shuffle(pods.map((_, i) => i).filter(i => pods[i].state !== "critical"));
     pool.slice(0, 8).forEach(i => setState(i, "critical"));
     screenShake(); siren(3);
@@ -316,7 +324,7 @@
     // per-second scoring
     if (t % 1000 === 0) {
       if (health > 80) score += 50;
-      if (health < 30) { score = Math.max(0, score - 100); log("Downtime penalty -100", "ev"); }
+      if (health < 30) { score = Math.max(0, score - 100); log("Health below 30%: -100", "ev"); }
     }
 
     renderHUD();
@@ -339,7 +347,7 @@
     $("#startOverlay").classList.add("hidden");
     $("#endOverlay").classList.add("hidden");
     running = true;
-    log("Incident response started. Good luck, SRE.");
+    log("Drill started");
     renderHUD();
     loop = setInterval(tick, TICK);
   }
@@ -352,15 +360,15 @@
     const entry = { name, score, survived, ts: Date.now() };
     const rank = saveScore(entry);
     const title = $("#endTitle");
-    title.textContent = survived ? "SYSTEM SURVIVED" : "INFRASTRUCTURE COLLAPSE";
+    title.textContent = survived ? "Cluster survived" : "Cluster went down";
     title.className = survived ? "" : "bad";
-    $("#endSub").textContent = survived ? `Nice work, ${name}. Cluster stayed up for 60s.` : `${name}, the cluster went down at ${(t / 1000).toFixed(1)}s.`;
+    $("#endSub").textContent = survived ? `${name} kept the cluster up for the full 60 seconds.` : `${name} lost the cluster at ${(t / 1000).toFixed(1)} seconds.`;
     $("#endScore").textContent = score.toLocaleString();
-    $("#endRank").textContent = DB ? "Saving score online..." : `Leaderboard rank: #${rank}`;
+    $("#endRank").textContent = DB ? "Saving your score..." : `Rank #${rank} on the leaderboard`;
     if (DB) {
       saveRemote(entry)
-        .then(r => { $("#endRank").textContent = `Leaderboard rank: #${r}`; })
-        .catch(() => { $("#endRank").textContent = `Saved locally (#${rank}). Online save failed, check connection.`; });
+        .then(r => { $("#endRank").textContent = `Rank #${r} on the leaderboard`; })
+        .catch(() => { $("#endRank").textContent = `Saved on this device only (rank #${rank}). The online save failed, so check the connection.`; });
     }
     $("#endOverlay").classList.remove("hidden");
     beep(survived ? 1000 : 120, 0.5, "triangle", 0.1);
