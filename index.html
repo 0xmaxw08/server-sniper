@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Server Sniper: Chaos Edition</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hud">
+  <div class="brand">SERVER<span>SNIPER</span><small>// chaos edition</small></div>
+  <div class="stat"><label>TIME</label><b id="timer">60.0</b></div>
+  <div class="stat"><label>SCORE</label><b id="score">0</b></div>
+  <div class="stat"><label>COMBO</label><b id="combo" class="dim">x1</b></div>
+  <div class="health">
+    <label>SYSTEM HEALTH <b id="healthText">100%</b></label>
+    <div class="bar"><div id="healthFill"></div></div>
+  </div>
+</header>
+
+<main>
+  <section id="grid" aria-label="Kubernetes pods"></section>
+
+  <aside class="panel">
+    <h3>ACTION PANEL</h3>
+    <div id="lb" class="lb" draggable="true" title="Drag onto a yellow pod">
+      <span>⚖️</span> LOAD BALANCER
+      <small>drag onto yellow pod</small>
+    </div>
+    <ul class="help">
+      <li><b class="y">YELLOW</b> hover + press <kbd>S</kbd> (scale up)<br>or drag the Load Balancer onto it</li>
+      <li><b class="r">RED</b> hold click 0.75s (hard reboot)<br>or double-click, type <kbd>kill</kbd> / <kbd>fix</kbd> + Enter</li>
+      <li>3 fixes in under 2s = <b class="g">2x combo</b> for 5s</li>
+      <li><b class="g">GREEN</b>: don't touch! Click or <kbd>S</kbd> on a healthy pod = <b class="r">-100</b></li>
+    </ul>
+    <h3>INCIDENT LOG</h3>
+    <div id="log" class="log"></div>
+  </aside>
+</main>
+
+<div id="shake-flash"></div>
+
+<svg id="ring" viewBox="0 0 64 64" class="hidden">
+  <circle cx="32" cy="32" r="26" class="track"/>
+  <circle id="ringFill" cx="32" cy="32" r="26" class="fill"/>
+</svg>
+
+<div id="terminal" class="hidden">
+  <div class="tbar"><span id="termTitle">pod</span><span class="x" id="termClose">✕</span></div>
+  <div class="tbody">
+    <div>$ kubectl exec -it <span id="termPod">pod</span></div>
+    <div class="hint">type <b>kill</b> or <b>fix</b>, then Enter</div>
+    <div class="prompt">$ <input id="termInput" autocomplete="off" spellcheck="false"></div>
+  </div>
+</div>
+
+<div id="startOverlay" class="overlay">
+  <div class="card wide">
+    <h1>SERVER SNIPER</h1>
+    <p class="sub">You are the on-call SRE. 36 pods. 60 seconds. Don't let the cluster die.</p>
+
+    <div class="rules">
+      <h3>// RULES OF ENGAGEMENT</h3>
+      <div class="rule-grid">
+        <div class="rule y">
+          <b>🟡 YELLOW: fast!</b>
+          <p>Hover and press <kbd>S</kbd> <i>or</i> drag the Load Balancer onto it. <span class="pts">+200</span></p>
+          <p class="note">Ignored for 3s, it turns red.</p>
+        </div>
+        <div class="rule r">
+          <b>🔴 RED: fix now!</b>
+          <p>Hold left click for <b>0.75s</b> <i>or</i> double-click, type <kbd>kill</kbd> / <kbd>fix</kbd>, Enter. <span class="pts">+500</span></p>
+          <p class="note">Each red drains 5% health per second.</p>
+        </div>
+        <div class="rule g">
+          <b>🟢 GREEN: don't touch!</b>
+          <p>Click or <kbd>S</kbd> on a healthy pod. <span class="pts neg">-100</span></p>
+        </div>
+        <div class="rule c">
+          <b>⚡ COMBO</b>
+          <p>3 fixes within 2s = <b>2x points</b> for 5s.</p>
+        </div>
+      </div>
+      <ul class="rule-list">
+        <li>Health hits 0% = instant game over. Survive the full 60s.</li>
+        <li><span class="pts">+50</span>/sec while health is above 80%. <span class="pts neg">-100</span>/sec while below 30%.</li>
+        <li>Watch for <b>Traffic Spike</b> (T-45s) and <b>Chaos Monkey</b> (T-20s).</li>
+      </ul>
+    </div>
+
+    <input id="nameInput" maxlength="16" placeholder="Enter your name, then press DEPLOY">
+    <button id="startBtn">DEPLOY ▶</button>
+    <p class="tiny">Leaderboard for the audience monitor: open <a href="leaderboard.html" target="_blank">leaderboard.html</a> in a second window</p>
+  </div>
+</div>
+
+<div id="endOverlay" class="overlay hidden">
+  <div class="card">
+    <h1 id="endTitle">GAME OVER</h1>
+    <p class="sub" id="endSub"></p>
+    <div class="big" id="endScore">0</div>
+    <p id="endRank" class="sub"></p>
+    <button id="againBtn">REDEPLOY ↻</button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="game.js"></script>
+</body>
+</html>

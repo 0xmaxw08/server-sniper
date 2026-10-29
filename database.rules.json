@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "scores": {
+      ".read": true,
+      "$id": {
+        ".write": "!data.exists()",
+        ".validate": "newData.hasChildren(['name','score','survived','ts'])",
+        "name": { ".validate": "newData.isString() && newData.val().length <= 16" },
+        "score": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000" },
+        "survived": { ".validate": "newData.isBoolean()" },
+        "ts": { ".validate": "newData.isNumber()" },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Server Sniper: Leaderboard</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(ellipse at top,#0e1a26,#070b10 60%);color:#cfe8ff;font-family:"JetBrains Mono",Consolas,monospace;min-height:100vh;padding:4vh 8vw}
+  h1{text-align:center;font-size:clamp(28px,5vw,64px);color:#00ff88;text-shadow:0 0 20px #00ff88;letter-spacing:6px}
+  h1 span{color:#38d6ff;text-shadow:0 0 20px #38d6ff}
+  .sub{text-align:center;color:#5d7a92;letter-spacing:4px;margin:6px 0 4vh}
+  table{width:100%;border-collapse:collapse;font-size:clamp(16px,2.6vw,34px)}
+  tr{border-bottom:1px solid #1c2a38}
+  td{padding:1.2vh 12px}
+  td.rank{width:12%;color:#5d7a92}
+  td.score{text-align:right;color:#ffd400;font-weight:800}
+  td.tag{width:6%;text-align:center}
+  tr:nth-child(1) td{color:#ffd400;text-shadow:0 0 14px #ffd400;font-size:1.25em}
+  tr:nth-child(2) td.name,tr:nth-child(3) td.name{color:#fff}
+  .empty{text-align:center;color:#5d7a92;margin-top:10vh;font-size:22px}
+  #reset{position:fixed;right:8px;bottom:8px;opacity:.15;font-size:11px;color:#fff;background:none;border:none;cursor:pointer}
+  #reset:hover{opacity:.8}
+</style>
+</head>
+<body>
+<h1>SERVER<span>SNIPER</span></h1>
+<div class="sub">TOP SRES // LIVE LEADERBOARD</div>
+<div id="out"></div>
+<button id="reset">reset scores</button>
+<script src="config.js"></script>
+<script>
+  const KEY = "serverSniperScores";
+  const DB = (window.SNIPER_DB_URL || "").replace(/\/+$/, "");
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  async function render() {
+    let list = [];
+    if (DB) {
+      try {
+        const all = await (await fetch(`${DB}/scores.json`, { cache: "no-store" })).json() || {};
+        list = Object.values(all).filter(s => s && typeof s.score === "number").sort((a, b) => b.score - a.score);
+      } catch (e) { return; }   // keep showing the last good board if the network blips
+    } else {
+      try { list = JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) {}
+    }
+    const out = document.getElementById("out");
+    if (!list.length) { out.innerHTML = '<div class="empty">No runs yet. Be the first SRE.</div>'; return; }
+    out.innerHTML = "<table>" + list.slice(0, 10).map((e, i) =>
+      `<tr><td class="rank">#${i + 1}</td><td class="name">${esc(e.name)}</td>` +
+      `<td class="tag">${e.survived ? "✅" : "💀"}</td><td class="score">${e.score.toLocaleString()}</td></tr>`).join("") + "</table>";
+  }
+  render();
+  window.addEventListener("storage", e => { if (e.key === KEY) render(); });
+  try { new BroadcastChannel("sniper").onmessage = render; } catch (e) {}
+  setInterval(render, 3000); // fallback
+  // Online mode: Firebase pushes a stream event on every change, so refresh instantly.
+  if (DB) { try { const es = new EventSource(`${DB}/scores.json`); es.addEventListener("put", render); es.addEventListener("patch", render); } catch (e) {} }
+  document.getElementById("reset").onclick = () => {
+    if (DB) { alert("Scores are stored online. Clear them from the Firebase console: Realtime Database -> scores -> delete."); return; }
+    if (confirm("Clear all scores?")) { localStorage.removeItem(KEY); render(); }
+  };
+</script>
+</body>
+</html>
