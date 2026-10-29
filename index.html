@@ -11,7 +11,7 @@
   <div class="brand">SERVER<span>SNIPER</span><small>// chaos edition</small></div>
   <div class="stat"><label>TIME</label><b id="timer">60.0</b></div>
   <div class="stat"><label>SCORE</label><b id="score">0</b></div>
-  <div class="stat"><label>COMBO</label><b id="combo" class="dim">1x</b></div>
+  <div class="stat"><label>COMBO</label><b id="combo" class="dim">x1</b></div>
   <div class="health">
     <label>SYSTEM HEALTH <b id="healthText">100%</b></label>
     <div class="bar"><div id="healthFill"></div></div>
@@ -20,6 +20,7 @@
 
 <main>
   <section id="grid" aria-label="Kubernetes pods"></section>
+
   <aside class="panel">
     <h3>ACTION PANEL</h3>
     <div id="lb" class="lb" draggable="true" title="Drag onto a yellow pod">
@@ -69,7 +70,7 @@
         <div class="rule r">
           <b>🔴 RED: fix now!</b>
           <p>Hold left click for <b>0.75s</b> <i>or</i> double-click, type <kbd>kill</kbd> / <kbd>fix</kbd>, Enter. <span class="pts">+500</span></p>
-          <p class="note">Each red drains 2.5% health per second.</p>
+          <p class="note">Each red drains 5% health per second.</p>
         </div>
         <div class="rule g">
           <b>🟢 GREEN: don't touch!</b>
@@ -82,15 +83,13 @@
       </div>
       <ul class="rule-list">
         <li>Health hits 0% = instant game over. Survive the full 60s.</li>
-        <li>With no reds on the board, health slowly recovers (1% per second).</li>
         <li><span class="pts">+50</span>/sec while health is above 80%. <span class="pts neg">-100</span>/sec while below 30%.</li>
         <li>Watch for <b>Traffic Spike</b> (T-45s) and <b>Chaos Monkey</b> (T-20s).</li>
-        <li>Every player gets the exact same pod sequence, so scores are directly comparable.</li>
       </ul>
     </div>
 
     <input id="nameInput" maxlength="16" placeholder="Enter your name, then press DEPLOY">
-    <button id="startBtn">DEPLOY ▶</button> </div>
+    <button id="startBtn">DEPLOY ▶</button>  </div>
 </div>
 
 <div id="endOverlay" class="overlay hidden">
