@@ -19,15 +19,30 @@
   tr:nth-child(1) td{color:#ffd400;text-shadow:0 0 14px #ffd400;font-size:1.25em}
   tr:nth-child(2) td.name,tr:nth-child(3) td.name{color:#fff}
   .empty{text-align:center;color:#5d7a92;margin-top:10vh;font-size:22px}
-  #reset{position:fixed;right:8px;bottom:8px;opacity:.15;font-size:11px;color:#fff;background:none;border:none;cursor:pointer}
-  #reset:hover{opacity:.8}
+  #reset{position:fixed;right:16px;bottom:16px;opacity:.35;font:700 16px/1 inherit;font-family:inherit;letter-spacing:2px;color:#fff;background:#1a2733;border:1px solid #38566f;border-radius:8px;padding:14px 22px;cursor:pointer}
+  #reset:hover{opacity:1;border-color:#ff2d55;color:#ff2d55}
+  #resetPanel{position:fixed;right:16px;bottom:16px;width:340px;background:#0d141c;border:1px solid #ff2d55;border-radius:10px;padding:18px;box-shadow:0 0 30px rgba(255,45,85,.3);display:none;z-index:10}
+  #resetPanel.open{display:block}
+  #resetPanel p{font-size:14px;margin-bottom:10px;color:#cfe8ff}
+  #resetPanel input{width:100%;padding:12px;margin-bottom:10px;background:#05080c;border:1px solid #1c2a38;border-radius:6px;color:#cfe8ff;font:inherit;font-size:16px}
+  #resetPanel .row{display:flex;gap:10px}
+  #resetPanel button{flex:1;padding:12px;font:inherit;font-weight:800;letter-spacing:1px;cursor:pointer;border-radius:6px;border:none}
+  #doReset{background:#ff2d55;color:#fff}
+  #cancelReset{background:#1a2733;color:#cfe8ff}
+  #resetMsg{font-size:13px;margin-top:10px;min-height:1em;color:#ffd400}
 </style>
 </head>
 <body>
 <h1>SERVER<span>SNIPER</span></h1>
 <div class="sub">TOP SRES // LIVE LEADERBOARD</div>
 <div id="out"></div>
-<button id="reset">reset scores</button>
+<button id="reset">RESET SCORES</button>
+<div id="resetPanel">
+  <p>Enter passcode to clear <b>ALL</b> scores:</p>
+  <input id="resetPass" type="password" placeholder="passcode" autocomplete="off">
+  <div class="row"><button id="doReset">CLEAR ALL</button><button id="cancelReset">CANCEL</button></div>
+  <div id="resetMsg"></div>
+</div>
 <script src="config.js"></script>
 <script>
   const KEY = "serverSniperScores";
@@ -55,10 +70,30 @@
   setInterval(render, 3000); // fallback
   // Online mode: Firebase pushes a stream event on every change, so refresh instantly.
   if (DB) { try { const es = new EventSource(`${DB}/scores.json`); es.addEventListener("put", render); es.addEventListener("patch", render); } catch (e) {} }
-  document.getElementById("reset").onclick = () => {
-    if (DB) { alert("Scores are stored online. Clear them from the Firebase console: Realtime Database -> scores -> delete."); return; }
-    if (confirm("Clear all scores?")) { localStorage.removeItem(KEY); render(); }
-  };
+  // Reset: asks for a passcode (change it here or set window.SNIPER_RESET_PASS in config.js).
+  // NOTE: this is client-side only, so it stops accidental clicks, not a determined person.
+  const RESET_PASS = window.SNIPER_RESET_PASS || "reset";
+  const panel = document.getElementById("resetPanel"), passEl = document.getElementById("resetPass"), msg = document.getElementById("resetMsg");
+  const openPanel = () => { panel.classList.add("open"); document.getElementById("reset").style.display = "none"; msg.textContent = ""; passEl.value = ""; passEl.focus(); };
+  const closePanel = () => { panel.classList.remove("open"); document.getElementById("reset").style.display = ""; };
+  document.getElementById("reset").onclick = openPanel;
+  document.getElementById("cancelReset").onclick = closePanel;
+  passEl.addEventListener("keydown", e => { if (e.key === "Enter") doReset(); if (e.key === "Escape") closePanel(); });
+  document.getElementById("doReset").onclick = doReset;
+  async function doReset() {
+    if (passEl.value !== RESET_PASS) { msg.textContent = "Wrong passcode."; return; }
+    msg.textContent = "Clearing...";
+    localStorage.removeItem(KEY);
+    if (DB) {
+      try {
+        const r = await fetch(`${DB}/scores.json`, { method: "DELETE" });
+        if (!r.ok) throw new Error(r.status);
+      } catch (e) { msg.textContent = "Could not clear online scores (" + e.message + "). Check Firebase rules."; return; }
+    }
+    await render();
+    msg.textContent = "Cleared.";
+    setTimeout(closePanel, 800);
+  }
 </script>
 </body>
 </html>
