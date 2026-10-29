@@ -2,6 +2,7 @@
   "rules": {
     "scores": {
       ".read": true,
+      ".write": "newData.val() == null",
       "$id": {
         ".write": "!data.exists()",
         ".validate": "newData.hasChildren(['name','score','survived','ts'])",
