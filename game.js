@@ -6,7 +6,7 @@
   const GAME_MS = 60000;
   const TICK = 100;
   const WARN_TO_RED_MS = 3000;
-  const DRAIN_PER_RED_PER_TICK = 0.25;  // 2.5% per second per red node (100ms ticks)
+  const DRAIN_PER_RED_PER_TICK = 0.5;   // 5% per second per red node (100ms ticks)
   const REGEN_PER_TICK = 0.1;           // 1%/s slow recovery when no reds (tweak or set 0)
   const HOLD_MS = 750;                  // red hard-reboot hold time
   const GREEN_PENALTY = 100;            // points lost for clicking / pressing S on a healthy pod
