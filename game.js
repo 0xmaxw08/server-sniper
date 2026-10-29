@@ -394,9 +394,14 @@
   }
 
   // ---------- Wire up ----------
-  $("#nameInput").value = localStorage.getItem("sniperLastName") || "";
+  $("#nameInput").value = "";   // always start blank: a new player each time
   $("#startBtn").addEventListener("click", start);
-  $("#againBtn").addEventListener("click", () => { $("#endOverlay").classList.add("hidden"); $("#startOverlay").classList.remove("hidden"); });
+  $("#againBtn").addEventListener("click", () => {
+    $("#endOverlay").classList.add("hidden");
+    $("#nameInput").value = "";                       // clear name for the next player
+    $("#startOverlay").classList.remove("hidden");
+    $("#nameInput").focus();
+  });
   $("#nameInput").addEventListener("keydown", e => { if (e.key === "Enter") start(); });
   pods = Array.from({ length: SIZE }, () => ({ state: "healthy", since: 0 }));
   renderHUD();
