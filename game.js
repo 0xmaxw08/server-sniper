@@ -8,7 +8,7 @@
   const WARN_TO_RED_MS = 3000;
   const DRAIN_PER_RED_PER_TICK = 0.5;   // 5% per second per red node (100ms ticks)
   const REGEN_PER_TICK = 0.1;           // 1%/s slow recovery when no reds (tweak or set 0)
-  const HOLD_MS = 750;                  // red hard-reboot hold time
+  const HOLD_MS = 600;                  // red hard-reboot hold time
   const GREEN_PENALTY = 100;            // points lost for clicking / pressing S on a healthy pod
   const COMBO_WINDOW = 2000, COMBO_NEEDED = 3, COMBO_DURATION = 5000;
   const KEY = "serverSniperScores";
